@@ -138,7 +138,7 @@ public class NativeLibrary {
             if (Platform.isAndroid()) {
                 try {
                     System.loadLibrary(libraryName);
-                    handle = open(libraryPath);
+                    handle = Native.open(libraryPath);
                 }
                 catch(UnsatisfiedLinkError e2) { e = e2; }
             }
