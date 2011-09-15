@@ -183,6 +183,9 @@ public class NativeLibraryTest extends TestCase {
     }
     
     public void testGetProcess() {
+        if (Platform.isAndroid()) {
+            fail("dlopen(NULL) segfaults on Android.");
+        }
         NativeLibrary process = NativeLibrary.getProcess();
         // Access a common C library function
         process.getFunction("printf");

@@ -133,7 +133,16 @@ public class NativeLibrary {
             }
         }
         catch(UnsatisfiedLinkError e) {
-            if (Platform.isLinux()) {
+            // In Android, try to "preload" the library using System.loadLibrary(), which
+            // looks into the private /data/data path, not found in any properties
+            if (Platform.isAndroid()) {
+                try {
+                    System.loadLibrary(libraryName);
+                    handle = open(libraryPath);
+                }
+                catch(UnsatisfiedLinkError e2) { e = e2; }
+            }
+            else if (Platform.isLinux()) {
                 //
                 // Failed to load the library normally - try to match libfoo.so.*
                 //

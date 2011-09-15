@@ -60,7 +60,7 @@ create_callback(JNIEnv* env, jobject obj, jobject method,
 
   cb = (callback *)malloc(sizeof(callback));
   cb->closure = ffi_closure_alloc(sizeof(ffi_closure), &cb->x_closure);
-  cb->object = (*env)->NewWeakGlobalRef(env, obj);
+  cb->object = (*env)->NewGlobalRef(env, obj);
   cb->methodID = (*env)->FromReflectedMethod(env, method);
   cb->vm = vm;
   cb->arg_types = (ffi_type**)malloc(sizeof(ffi_type*) * argc);
@@ -77,7 +77,7 @@ create_callback(JNIEnv* env, jobject obj, jobject method,
     int jtype;
     jclass cls = (*env)->GetObjectArrayElement(env, param_types, i);
     if ((cb->flags[i] = get_conversion_flag(env, cls)) != CVT_DEFAULT) {
-      cb->arg_classes[i] = (*env)->NewWeakGlobalRef(env, cls);
+      cb->arg_classes[i] = (*env)->NewGlobalRef(env, cls);
       cvt = 1;
     }
 
@@ -194,13 +194,13 @@ create_callback(JNIEnv* env, jobject obj, jobject method,
 }
 void 
 free_callback(JNIEnv* env, callback *cb) {
-  (*env)->DeleteWeakGlobalRef(env, cb->object);
+  (*env)->DeleteGlobalRef(env, cb->object);
   ffi_closure_free(cb->closure);
   free(cb->arg_types);
   if (cb->arg_classes) {
     unsigned i;
     for (i=0;i < cb->cif.nargs;i++) {
-      (*env)->DeleteWeakGlobalRef(env, cb->arg_classes[i]);
+      (*env)->DeleteGlobalRef(env, cb->arg_classes[i]);
     }
     free(cb->arg_classes);
   }
@@ -429,7 +429,7 @@ jnidispatch_callback_init(JNIEnv* env) {
 void
 jnidispatch_callback_dispose(JNIEnv* env) {
   if (classObject) {
-    (*env)->DeleteWeakGlobalRef(env, classObject);
+    (*env)->DeleteGlobalRef(env, classObject);
     classObject = NULL;
   }
 }

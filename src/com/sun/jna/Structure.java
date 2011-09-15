@@ -95,6 +95,7 @@ public abstract class Structure {
 
     static final boolean isPPC;
     static final boolean isSPARC;
+    static final boolean isARM;
 
     static {
         // Check for predictable field order; IBM and JRockit store fields in
@@ -113,6 +114,7 @@ public abstract class Structure {
         String arch = System.getProperty("os.arch").toLowerCase();
         isPPC = "ppc".equals(arch) || "powerpc".equals(arch);
         isSPARC = "sparc".equals(arch);
+        isARM = arch.startsWith("arm");
     }
 
     /** Use the platform default alignment. */
@@ -132,7 +134,7 @@ public abstract class Structure {
     //public static final int ALIGN_8 = 6;
 
     static final int MAX_GNUC_ALIGNMENT =
-        isSPARC || (isPPC && Platform.isLinux())
+        isSPARC || (isPPC && Platform.isLinux()) || isARM
         ? 8 : Native.LONG_SIZE;
     protected static final int CALCULATE_SIZE = -1;
 
@@ -676,10 +678,17 @@ public abstract class Structure {
      */
     protected void setFieldOrder(String[] fields) {
         getFieldOrder().addAll(Arrays.asList(fields));
-        // Force recalculation of size/field layout
-        this.size = CALCULATE_SIZE;
-        if (this.memory instanceof AutoAllocated) {
-            this.memory = null;
+        if (this.size != CALCULATE_SIZE) {
+            // Force recalculation of size/field layout
+            this.size = CALCULATE_SIZE;
+            if (this.memory instanceof AutoAllocated) {
+                this.memory = null;
+            }
+        }
+        if (this.memory == null) {
+            allocateMemory(CALCULATE_SIZE);
+        } else {
+            this.size = calculateSize(false);
         }
     }
 
@@ -717,7 +726,7 @@ public abstract class Structure {
             }
             flist.addAll(0, classFields);
         }
-        if (REQUIRES_FIELD_ORDER || hasFieldOrder()) {
+        if ((REQUIRES_FIELD_ORDER || hasFieldOrder()) && flist.size() > 1 && !(this instanceof Union)) {
             List fieldOrder = getFieldOrder();
             if (fieldOrder.size() < flist.size()) {
                 if (force) {
@@ -1275,6 +1284,7 @@ public abstract class Structure {
         // From ffi.h
         private static final int FFI_TYPE_STRUCT = 13;
         // Structure fields
+        { setFieldOrder(new String[] { "size", "alignment", "type", "elements" } ); }
         public size_t size;
         public short alignment;
         public short type = FFI_TYPE_STRUCT;

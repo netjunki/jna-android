@@ -327,6 +327,12 @@
     <!-- ensure ARCH is set properly for 64-bit capable platforms -->
     <!-- use ANT_OPTS=-d64 to build 64-bit if not the platform default -->
     <property name="ARCH" value="${os.arch}"/>
+    <condition property="make.ANDROID_HOME" value="ANDROID_HOME=${ANDROID_HOME}" else="IGNORE=">
+      <isset property="ANDROID_HOME"/>
+    </condition>
+    <condition property="make.LD" value="LD=${CC}" else="IGNORE=">
+      <isset property="CC"/>
+    </condition>
     <condition property="make.CC" value="CC=${CC}" else="IGNORE=">
       <isset property="CC"/>
     </condition>
@@ -375,6 +381,8 @@
       <arg value="DEBUG=${debug.native}"/>
       <arg value="CFLAGS_EXTRA=${cflags_extra.native}"/>
       <arg value="DYNAMIC_LIBFFI=${dynlink.native}"/>
+      <arg value="${make.ANDROID_HOME}"/>
+      <arg value="${make.LD}"/>
       <arg value="${make.CC}"/>
       <arg value="${make.BUILD}"/>
       <arg value="${make.SDKROOT}"/>

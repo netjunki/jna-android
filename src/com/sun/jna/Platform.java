@@ -19,13 +19,18 @@ public final class Platform {
     public static final int FREEBSD = 4;
     public static final int OPENBSD = 5;
     public static final int WINDOWSCE = 6;
+    public static final int ANDROID = 7;
 
     private static final int osType;
     
     static {
         String osName = System.getProperty("os.name");
         if (osName.startsWith("Linux")) {
-            osType = LINUX;
+            if ("Dalvik".equals(System.getProperty("java.vm.name"))) {
+                osType = ANDROID;
+            } else {
+                osType = LINUX;
+            }
         } 
         else if (osName.startsWith("Mac") || osName.startsWith("Darwin")) {
             osType = MAC;
@@ -55,6 +60,9 @@ public final class Platform {
     }
     public static final boolean isMac() {
         return osType == MAC;
+    }
+    public static final boolean isAndroid() {
+        return osType == ANDROID;
     }
     public static final boolean isLinux() {
         return osType == LINUX;

@@ -1,0 +1,80 @@
+=JNA on Android=
+This patched version of JNA is my attempt at porting JNA to the Android platform. It is by no means complete. I am releasing the patch so that others may check it out, and hopefully help out.
+
+It works with JavaCV, and should let other things run on the Android platform as well...
+
+==How to get up and running==
+This procedure has only been tested on my installation of Fedora 14. It should work in other distributions, but it will probably fail under other operating systems.
+
+1. Apply [http://code.google.com/p/javacv/downloads/detail?name=jna-android-20101202.patch the patch] to the [https://jna.dev.java.net/source/browse/jna/ source tree of JNA]. Note that it applies cleanly to revision 1174 of the SVN repository inside the `jnalib` directory:
+{{{
+    patch -p1 < jna-android-20101202.patch
+}}}
+2. Install the latest [http://developer.android.com/sdk/ Android SDK and NDK], as well as the basic packages.
+
+3. Start the build process inside `jnalib`, adjusting the directories to match your NDK as necessary:
+{{{
+    ant jar compile-tests -DCC=$HOME/android-ndk-r4b/build/prebuilt/linux-x86/arm-eabi-4.4.0/bin/arm-eabi-gcc \
+                -DANDROID_HOME=$HOME/android-ndk-r4b/build/platforms/android-8/arch-arm/
+}}}
+If all goes well, you will find a `jna.jar` and `libjnidispatch.so` inside `build-d64` or some other build directory. (The files will be named with things like amd64 in it and such, but that is normal. The build system names the files after the build platform, not the target one.)
+
+4. Copy the `jna.jar` file to the `libs` directory of an Android project, and the `libjnidispatch.so` to the `libs/armeabi/` subdirectory. (You may start by hijacking the `hellojni` sample project.)
+
+5. Build your Android project as usual, `ant debug` and what not
+
+==Testing==
+You may run the unit tests by copying `jna-test.jar`, `junit.jar`, `libtestlib.so`, and `libtestlib2.so` to `libs` and `libs/armeabi` respectively, and by placing inside an `Activity.onCreate()` method, of the `hellojni` project for example, something like:
+{{{
+import com.sun.jna.*;
+import junit.textui.*;
+
+        TestRunner.run(ArgumentsMarshalTest.class);
+        TestRunner.run(ByReferenceArgumentsTest.class);
+        TestRunner.run(CallbacksTest.class);
+        TestRunner.run(DirectArgumentsMarshalTest.class);
+        TestRunner.run(DirectByReferenceArgumentsTest.class);
+        TestRunner.run(DirectCallbacksTest.class);
+        TestRunner.run(DirectReturnTypesTest.class);
+        TestRunner.run(DirectStructureByValueTest.class);
+        TestRunner.run(DirectTest.class);
+        TestRunner.run(DirectTypeMapperTest.class);
+        TestRunner.run(HeadlessLoadLibraryTest.class);
+        TestRunner.run(IntegerTypeTest.class);
+        TestRunner.run(JNAUnloadTest.class);
+        TestRunner.run(LastErrorTest.class);
+        TestRunner.run(LibraryLoadTest.class);
+        TestRunner.run(LibraryTest.class);
+        TestRunner.run(MemoryTest.class);
+        TestRunner.run(NativeLibraryTest.class);
+        TestRunner.run(NativeTest.class);
+        TestRunner.run(PointerTest.class);
+        TestRunner.run(ReturnTypesTest.class);
+        TestRunner.run(StructureByValueTest.class);
+        TestRunner.run(StructureTest.class);
+        TestRunner.run(TypeMapperTest.class);
+        TestRunner.run(UnionTest.class);
+        TestRunner.run(VarArgsTest.class);
+        TestRunner.run(VMCrashProtectionTest.class);
+        TestRunner.run(WebStartTest.class); 
+}}}
+
+And making sure to run the emulator with redirected stdio, e.g.:
+{{{
+    ./emulator -avd Emulator -prop log.redirect.stdio=true -logcat "*"
+}}}
+
+==Issues==
+There remains some issues related to limitations, differences, or bugs of the Android platform, but I think JNA in its current state should be usable nonetheless. The gist of them:
+ * Since Dalvik orders class fields for its own optimization purposes, need to call `Structure.setFieldOrder()`
+ * There is absolutely no `java.awt` package
+ * `NativeLibrary.getProcess()` depends on `dlopen(NULL)`, which may segfault: http://code.google.com/p/android/issues/detail?id=5049
+ * `File.createTempFile()` does not work (throws "Permission denied"), possible solutions: Context.getCacheDir(), WRITE_EXTERNAL_STORAGE permission
+ * Android does not support the `wchar` type, so do not expect `WString` to work
+ * Garbage collection may not happen at all even after calling `System.gc()`
+ * Dalvik has no mechanism to load .class or .jar files, they need to be "dexed" first
+ * Weak global references do not seem to work properly yet, so libraries may not automatically unload
+
+----
+Copyright (C) 2010 Samuel Audet <samuel.audet@gmail.com>
+Project site: http://code.google.com/p/javacv/

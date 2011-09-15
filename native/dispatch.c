@@ -1893,7 +1893,7 @@ Java_com_sun_jna_Native_initIDs(JNIEnv *env, jclass cls) {
     throwByName(env, EUnsatisfiedLink,
                 "Can't obtain peer field ID for class com.sun.jna.Pointer");
   }
-  else if (!(classNative = (*env)->NewWeakGlobalRef(env, cls))) {
+  else if (!(classNative = (*env)->NewGlobalRef(env, cls))) {
     throwByName(env, EUnsatisfiedLink,
                 "Can't obtain global reference for class com.sun.jna.Native");
   }
@@ -2468,7 +2468,7 @@ JNI_OnUnload(JavaVM *vm, void *UNUSED(reserved)) {
 
   for (i=0;i < sizeof(refs)/sizeof(refs[0]);i++) {
     if (*refs[i]) {
-      (*env)->DeleteWeakGlobalRef(env, *refs[i]);
+      (*env)->DeleteGlobalRef(env, *refs[i]);
       *refs[i] = NULL;
     }
   }
@@ -2796,11 +2796,11 @@ Java_com_sun_jna_Native_unregister(JNIEnv *env, jclass UNUSED(ncls), jclass cls,
       unsigned i;
       for (i=0;i < md->cif.nargs;i++) {
         if (md->to_native[i])
-          (*env)->DeleteWeakGlobalRef(env, md->to_native[i]);
+          (*env)->DeleteGlobalRef(env, md->to_native[i]);
       }
     }
-    if (md->from_native) (*env)->DeleteWeakGlobalRef(env, md->from_native);
-    if (md->closure_rclass) (*env)->DeleteWeakGlobalRef(env, md->closure_rclass);
+    if (md->from_native) (*env)->DeleteGlobalRef(env, md->from_native);
+    if (md->closure_rclass) (*env)->DeleteGlobalRef(env, md->closure_rclass);
     free(md->arg_types);
     free(md->closure_arg_types);
     free(md->flags);
@@ -2863,7 +2863,7 @@ Java_com_sun_jna_Native_registerMethod(JNIEnv *env, jclass UNUSED(ncls),
   data->flags = cvts ? malloc(sizeof(jint)*argc) : NULL;
   data->rflag = rconversion;
   data->to_native = NULL;
-  data->from_native = from_native ? (*env)->NewWeakGlobalRef(env, from_native) : NULL;
+  data->from_native = from_native ? (*env)->NewGlobalRef(env, from_native) : NULL;
 
   for (i=0;i < argc;i++) {
     data->closure_arg_types[i+2] = (ffi_type*)L2A(closure_types[i]);
@@ -2875,7 +2875,7 @@ Java_com_sun_jna_Native_registerMethod(JNIEnv *env, jclass UNUSED(ncls),
         if (!data->to_native) {
           data->to_native = calloc(argc, sizeof(jweak));
         }
-        data->to_native[i] = (*env)->NewWeakGlobalRef(env, (*env)->GetObjectArrayElement(env, to_native, i));
+        data->to_native[i] = (*env)->NewGlobalRef(env, (*env)->GetObjectArrayElement(env, to_native, i));
       }
     }
   }
@@ -2883,7 +2883,7 @@ Java_com_sun_jna_Native_registerMethod(JNIEnv *env, jclass UNUSED(ncls),
   if (closure_types) (*env)->ReleaseLongArrayElements(env, closure_atypes, closure_types, 0);
   if (cvts) (*env)->ReleaseIntArrayElements(env, conversions, cvts, 0);
   data->fptr = L2A(function);
-  data->closure_rclass = (*env)->NewWeakGlobalRef(env, closure_rclass);
+  data->closure_rclass = (*env)->NewGlobalRef(env, closure_rclass);
 
   status = ffi_prep_cif(closure_cif, abi, argc+2, closure_rtype, data->closure_arg_types);  
   if (ffi_error(env, "Native method mapping", status)) {
@@ -2990,7 +2990,7 @@ Java_com_sun_jna_Native_ffi_1prep_1closure(JNIEnv *env, jclass UNUSED(cls), jlon
     return 0;
   }
 
-  cb->object = (*env)->NewWeakGlobalRef(env, obj);
+  cb->object = (*env)->NewGlobalRef(env, obj);
   cb->closure = ffi_closure_alloc(sizeof(ffi_closure), L2A(&cb->x_closure));
 
   s = ffi_prep_closure_loc(cb->closure, L2A(cif), &closure_handler, 
@@ -3005,7 +3005,7 @@ JNIEXPORT void JNICALL
 Java_com_sun_jna_Native_ffi_1free_1closure(JNIEnv *env, jclass UNUSED(cls), jlong closure) {
   callback* cb = (callback *)L2A(closure);
 
-  (*env)->DeleteWeakGlobalRef(env, cb->object);
+  (*env)->DeleteGlobalRef(env, cb->object);
   ffi_closure_free(cb->closure);
   free(cb);
 }

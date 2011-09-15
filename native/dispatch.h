@@ -13,6 +13,8 @@
 #ifndef DISPATCH_H
 #define DISPATCH_H
 
+#include <stdio.h>
+
 #include "ffi.h"
 #include "com_sun_jna_Function.h"
 #include "com_sun_jna_Native.h"
@@ -120,7 +122,7 @@ typedef struct _callback {
 /* Convenience macros */
 #define LOAD_WEAKREF(ENV,VAR) \
   ((VAR == 0) \
-   ? 0 : ((VAR = (*ENV)->NewWeakGlobalRef(ENV, VAR)) == 0 ? 0 : VAR))
+   ? 0 : ((VAR = (*ENV)->NewGlobalRef(ENV, VAR)) == 0 ? 0 : VAR))
 #define FIND_CLASS(ENV,SIMPLE,NAME) \
   (class ## SIMPLE = (*ENV)->FindClass(ENV, NAME))
 #define FIND_PRIMITIVE_CLASS(ENV,SIMPLE) \

@@ -42,8 +42,8 @@ ifneq ($(DYNAMIC_LIBFFI),true)
 FFI_SRC=$(shell pwd)/libffi
 FFI_BUILD=$(BUILD)/libffi
 FFI_LIB=$(FFI_BUILD)/.libs/libffi$(ARSFX)
-FFI_ENV=CC="$(CC)" CFLAGS="$(COPT) $(CDEBUG)" CPPFLAGS="$(CDEFINES)"
-FFI_CONFIG=--enable-static --disable-shared --with-pic=yes
+FFI_ENV=CC="$(CC)" CFLAGS="$(COPT) $(CDEBUG) $(CINCLUDES)" CPPFLAGS="$(CDEFINES)" LIBS="$(LIBS)"
+FFI_CONFIG=--enable-static --disable-shared --with-pic=yes --host=arm-eabi
 endif
 LIBRARY=$(BUILD)/$(LIBPFX)jnidispatch$(JNISFX)
 TESTLIB=$(BUILD)/$(LIBPFX)testlib$(LIBSFX)
@@ -56,21 +56,21 @@ ARSFX=.a
 JNISFX=$(LIBSFX)
 CC=gcc
 LD=gcc
-LIBS=
+LIBS=-nostdlib -L"$(ANDROID_HOME)/usr/lib/" -lgcc -lc -ldl -lm
 # Default to Sun recommendations for JNI compilation
-COPT=-O2 -fno-omit-frame-pointer -fno-strict-aliasing 
+COPT=-O2 -fno-omit-frame-pointer -fno-strict-aliasing -fpic -mthumb-interwork -ffunction-sections -funwind-tables -fstack-protector -fno-short-enums -march=armv5te -mtune=xscale -msoft-float
 CASM=-S
 ifeq ($(DEBUG),true)
 CDEBUG=-g
 endif
 CFLAGS_EXTRA=
 COUT=-o $@
-CINCLUDES=$(JAVA_INCLUDES) -I"$(JAVAH)" -I$(FFI_BUILD)/include
+CINCLUDES=$(JAVA_INCLUDES) -I"$(JAVAH)" -I$(FFI_BUILD)/include -I"$(ANDROID_HOME)/usr/include/" -I/usr/include/
 CDEFINES=-D_REENTRANT
 PCFLAGS=-W -Wall -Wno-unused -Wno-parentheses
 CFLAGS=$(PCFLAGS) $(CFLAGS_EXTRA) $(COPT) $(CDEBUG) $(CDEFINES) $(CINCLUDES) \
        -DJNA_JNI_VERSION='"$(JNA_JNI_VERSION)"' -DCHECKSUM='"$(CHECKSUM)"'
-LDFLAGS=-o $@ -shared 
+LDFLAGS=-o $@ -shared -Wl,-shared,-Bsymbolic
 ifeq ($(DYNAMIC_LIBFFI),true)
 CFLAGS += $(shell pkg-config --cflags libffi 2>/dev/null || echo)
 LIBS += $(shell pkg-config --libs libffi 2>/dev/null || echo -lffi)
@@ -237,7 +237,7 @@ $(LIBRARY): $(JNIDISPATCH_OBJS) $(FFI_LIB)
 	$(LD) $(LDFLAGS) $(JNIDISPATCH_OBJS) $(FFI_LIB) $(LIBS)
 
 $(TESTLIB): $(BUILD)/testlib.o 
-	$(LD) $(LDFLAGS) $<
+	$(LD) $(LDFLAGS) $< $(LIBS)
 
 ifeq ($(ARSFX),.lib)
 TESTDEP=$(TESTLIB:.dll=.lib)
@@ -245,7 +245,7 @@ else
 TESTDEP=$(TESTLIB)
 endif
 $(TESTLIB2): $(BUILD)/testlib2.o 
-	$(LD) $(LDFLAGS) $< $(TESTDEP)
+	$(LD) $(LDFLAGS) $< $(TESTDEP) $(LIBS)
 
 ifneq ($(DYNAMIC_LIBFFI),true)
 $(FFI_LIB):
